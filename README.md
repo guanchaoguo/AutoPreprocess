@@ -1,3 +1,3 @@
 # FeatureEngine
-Automated feature engineering tools.
-this is 
+This is an automated feature engineering tool.
+
