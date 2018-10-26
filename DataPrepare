@@ -18,6 +18,17 @@ class DataPrepare:
         cols_with_onlyone_val = self.df_train.columns[self.df_train.nunique() == 1] 
         self.x_train.drop(cols_with_onlyone_val.values, axis=1, inplace=True)
         self.x_test.drop(cols_with_onlyone_val.values, axis=1, inplace=True)
+    def DupRemove(self):
+        colsToRemove = []
+        columns = self.x_train.columns
+        for i in range(len(columns)-1):
+            v = self.x_train[columns[i]].values
+        dupCols = []
+        for j in range(i + 1,len(columns)):
+            if np.array_equal(v, train[columns[j]].values):
+                colsToRemove.append(columns[j])
+        self.x_train.drop(colsToRemove, axis=1, inplace=True) 
+        self.x_test.drop(colsToRemove, axis=1, inplace=True) 
 
     def OneHot(self):
         from sklearn.preprocessing import LabelEncoder
@@ -30,18 +41,24 @@ class DataPrepare:
         enc = OneHotEncoder()
         self.x_train = enc.fit_transform(self.x_train)  
         self.x_test = enc.fit_transform(self.x_test)            
+    
+    def Discretization(self,n = 5):
+        self.x_train = pd.qcut(self.x_train,n)
+        self.x_test = pd.qcut(self.x_test,n)
+    
+    def StandardScaler(self):
+        from sklearn.preprocessing import StandardScaler
+        scaler = StandardScaler()
+        StandardScaler(copy=True, with_mean=True, with_std=True)
+        self.x_train = scaler.fit_transform(self.x_train)  
+        self.x_test = scaler.fit_transform(self.x_test)  
         
-    def DupRemove(self):
-        colsToRemove = []
-        columns = self.x_train.columns
-        for i in range(len(columns)-1):
-            v = self.x_train[columns[i]].values
-        dupCols = []
-        for j in range(i + 1,len(columns)):
-            if np.array_equal(v, train[columns[j]].values):
-                colsToRemove.append(columns[j])
-        self.x_train.drop(colsToRemove, axis=1, inplace=True) 
-        self.x_test.drop(colsToRemove, axis=1, inplace=True) 
+    def MinMaxScaler(self):
+        from sklearn.preprocessing import MinMaxScaler
+        scaler = MinMaxScaler()
+        MinMaxScaler(copy=True, feature_range=(0, 1))
+        self.x_train = scaler.fit_transform(self.x_train)  
+        self.x_test = scaler.fit_transform(self.x_test) 
     
     def KSTest(self):
         from scipy.stats import ks_2samp
@@ -49,10 +66,16 @@ class DataPrepare:
         THRESHOLD_STATISTIC = 0.25 #need tuned 值小时两分布相同
         diff_cols = []
         for col in self.x_train.columns:
-            statistic, pvalue = ks_2samp(train[col].values, test[col].values)
+            statistic, pvalue = ks_2samp(self.x_train[col].values, self.x_test[col].values)
             if pvalue <= THRESHOLD_P_VALUE and np.abs(statistic) > THRESHOLD_STATISTIC:
                 diff_cols.append(col)
         for col in diff_cols:
             if col in self.x_train.columns:
                 self.x_train.drop(col, axis=1, inplace=True)
                 self.x_test.drop(col, axis=1, inplace=True)
+            
+    def PCA(self,n = 5):
+        from sklearn.decomposition import PCA
+        pca = PCA(n_components=n)
+        self.x_train = pca.fit_transform(self.x_train)  
+        self.x_test = pca.fit_transform(self.x_test) 
